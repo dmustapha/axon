@@ -1,0 +1,18 @@
+{
+  "project": "axon",
+  "currentPhase": "phase-0",
+  "currentStep": "0.1",
+  "currentSubStep": "0.1.a",
+  "status": "in-progress",
+  "autonomous_mode": false,
+  "completedSteps": [],
+  "fileGroups": {},
+  "deviations": [],
+  "contractAddresses": {},
+  "env": {},
+  "devPort": 3000,
+  "depsVerified": false,
+  "verification_commands": [],
+  "context_percentage": 10,
+  "timestamp": "2026-04-14T03:00:00Z"
+}
