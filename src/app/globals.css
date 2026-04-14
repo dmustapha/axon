@@ -1,26 +1,176 @@
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════
+   AXON — Trading Terminal Design System
+   Emerald data + Gold judicial + Red/Green trading
+   ═══════════════════════════════════════ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --font-display: 'Georgia', serif;
+  --font-body: system-ui, -apple-system, sans-serif;
+  --font-data: 'Menlo', 'Monaco', 'Courier New', monospace;
+
+  /* Core surfaces */
+  --ax-bg: #06060b;
+  --ax-bg-elev: #0b0b12;
+  --ax-panel: #111119;
+  --ax-surface: #16161f;
+  --ax-surface-hover: #1c1c28;
+  --ax-border: #232335;
+  --ax-border-bright: #2f2f48;
+
+  /* Trading colors */
+  --ax-green: #10b981;
+  --ax-green-bright: #34d399;
+  --ax-green-dim: rgba(16, 185, 129, 0.12);
+  --ax-red: #ef4444;
+  --ax-red-bright: #f87171;
+  --ax-red-dim: rgba(239, 68, 68, 0.12);
+
+  /* Courtroom gold */
+  --ax-gold: #fbbf24;
+  --ax-gold-dim: rgba(201, 149, 58, 0.12);
+  --ax-gold-glow: rgba(201, 149, 58, 0.25);
+
+  /* Blue accent */
+  --ax-blue: #3b82f6;
+  --ax-blue-dim: rgba(59, 130, 246, 0.12);
+
+  /* Text */
+  --ax-text: #eaeaf2;
+  --ax-text-sec: #a0a0b8;
+  --ax-text-muted: #6b6b80;
+
+  --ax-radius: 10px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+*, *::before, *::after { box-sizing: border-box; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  background: var(--ax-bg);
+  color: var(--ax-text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* — Font utilities — */
+.ax-serif { font-family: var(--font-display); }
+.ax-mono { font-family: var(--font-data); }
+
+/* — Focus — */
+*:focus-visible {
+  outline: 2px solid var(--ax-blue);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ===== PANEL CARD ===== */
+.ax-panel {
+  background: var(--ax-panel);
+  border: 1px solid var(--ax-border);
+  border-radius: var(--ax-radius);
+  overflow: hidden;
+}
+
+/* ===== PRICE FLASH ===== */
+@keyframes ax-flash-green {
+  0% { background: rgba(16, 185, 129, 0.25); }
+  100% { background: transparent; }
+}
+@keyframes ax-flash-red {
+  0% { background: rgba(239, 68, 68, 0.25); }
+  100% { background: transparent; }
+}
+.ax-flash-up { animation: ax-flash-green 0.6s ease-out; }
+.ax-flash-down { animation: ax-flash-red 0.6s ease-out; }
+
+/* ===== JUDGE GLOW + PULSE ===== */
+.ax-judge-glow {
+  box-shadow:
+    0 0 40px rgba(201, 149, 58, 0.12),
+    0 0 80px rgba(201, 149, 58, 0.05),
+    inset 0 1px 0 rgba(201, 149, 58, 0.08);
+}
+
+@keyframes ax-judge-pulse {
+  0%, 100% { box-shadow: 0 0 40px rgba(201, 149, 58, 0.12), 0 0 80px rgba(201, 149, 58, 0.05); }
+  50% { box-shadow: 0 0 50px rgba(201, 149, 58, 0.18), 0 0 100px rgba(201, 149, 58, 0.08); }
+}
+.ax-judge-pulse { animation: ax-judge-pulse 4s ease-in-out infinite; }
+
+/* ===== FILL BAR (quality checks + trust) ===== */
+.ax-fill-bar { transition: width 1.2s cubic-bezier(0.22, 0.61, 0.36, 1); }
+
+/* ===== TRUST SHIMMER ===== */
+@keyframes ax-shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+.ax-trust-shimmer { background-size: 200% 100%; animation: ax-shimmer 3s linear infinite; }
+
+/* ===== TYPEWRITER CURSOR ===== */
+@keyframes ax-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+.ax-typewriter-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 14px;
+  background: var(--ax-gold);
+  vertical-align: text-bottom;
+  animation: ax-blink 0.8s step-end infinite;
+  margin-left: 2px;
+}
+
+/* ===== JUDGE NARRATION BOX ===== */
+.ax-judge-box {
+  background: var(--ax-panel);
+  border: 1px solid var(--ax-border);
+  border-left: 3px solid var(--ax-gold);
+  border-radius: 0 6px 6px 0;
+  padding: 16px;
+}
+
+.ax-judge-text {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--ax-text-sec);
+  line-height: 1.7;
+}
+
+/* ===== VERDICT LARGE ===== */
+.ax-verdict-large {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(18px, 2.5vw, 24px);
+  letter-spacing: 0.12em;
+  padding: 4px 20px;
+  border-radius: 20px;
+  display: inline-block;
+}
+
+/* ===== STATUS DOT ===== */
+@keyframes ax-dot-pulse {
+  0%, 100% { opacity: 0.4; box-shadow: 0 0 0 0 transparent; }
+  50% { opacity: 1; box-shadow: 0 0 12px 4px rgba(16, 185, 129, 0.25); }
+}
+.ax-dot-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: ax-dot-pulse 2s ease-in-out infinite;
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--ax-bg-elev); }
+::-webkit-scrollbar-thumb { background: var(--ax-border); border-radius: 3px; }
+
+/* ===== REDUCED MOTION ===== */
+@media (prefers-reduced-motion: reduce) {
+  .ax-flash-up, .ax-flash-down { animation: none; }
+  .ax-judge-pulse { animation: none; }
+  .ax-fill-bar { transition: none; }
+  .ax-trust-shimmer { animation: none; }
+  .ax-typewriter-cursor { animation: none; opacity: 1; }
+  .ax-dot-pulse { animation: none; opacity: 1; }
 }
