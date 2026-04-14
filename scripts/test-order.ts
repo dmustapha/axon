@@ -15,6 +15,7 @@ for (const line of envContent.split('\n')) {
 
 const REST_URL = process.env.NEXT_PUBLIC_PACIFICA_REST_URL || 'https://test-api.pacifica.fi/api/v1';
 const PRIVATE_KEY = process.env.PACIFICA_PRIVATE_KEY!;
+// Main frontend wallet public key (from Pacifica UI header)
 const MAIN_ACCOUNT = process.env.PACIFICA_PUBLIC_KEY!;
 
 function sortJsonKeys(value: unknown): unknown {
@@ -29,7 +30,7 @@ function sortJsonKeys(value: unknown): unknown {
   return value;
 }
 
-function signAndPost(type: string, payload: Record<string, unknown>) {
+function signWithAgent(type: string, payload: Record<string, unknown>) {
   const keyBytes = bs58.decode(PRIVATE_KEY);
   const secretKey = keyBytes.length === 64 ? keyBytes : nacl.sign.keyPair.fromSeed(keyBytes).secretKey;
   const agentPubkey = bs58.encode(nacl.sign.keyPair.fromSecretKey(secretKey).publicKey);
@@ -42,8 +43,8 @@ function signAndPost(type: string, payload: Record<string, unknown>) {
 
   return {
     body: {
-      account: MAIN_ACCOUNT,
-      agent_wallet: agentPubkey,
+      account: MAIN_ACCOUNT,        // main wallet
+      agent_wallet: agentPubkey,     // agent key signs
       signature: bs58.encode(sig),
       timestamp,
       expiry_window: 5000,
@@ -52,62 +53,35 @@ function signAndPost(type: string, payload: Record<string, unknown>) {
   };
 }
 
-async function seed() {
-  console.log('Seeding demo state...\n');
+async function test() {
+  console.log('Testing with agent key pattern...');
+  console.log('Main account:', MAIN_ACCOUNT);
+  console.log('');
 
-  // 1. Set leverage for BTC to 10x
-  const levBTC = signAndPost('update_leverage', { symbol: 'BTC', leverage: 10 });
-  const r1 = await fetch(`${REST_URL}/account/leverage`, {
+  // 1. Set leverage for BTC
+  const lev = signWithAgent('update_leverage', { symbol: 'BTC', leverage: 10 });
+  const levRes = await fetch(`${REST_URL}/account/leverage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(levBTC.body),
+    body: JSON.stringify(lev.body),
   });
-  console.log(`BTC leverage 10x: ${r1.status}`);
+  console.log('Set leverage:', levRes.status, await levRes.json());
 
-  // 2. Open BTC long (0.05 BTC)
-  const btcOrder = signAndPost('create_market_order', {
+  // 2. Market order
+  const order = signWithAgent('create_market_order', {
     symbol: 'BTC',
     side: 'bid',
-    amount: '0.05',
+    amount: '0.001',
     reduce_only: false,
-    slippage_percent: '1.0',
+    slippage_percent: '5.0',
     client_order_id: crypto.randomUUID(),
   });
-  const r2 = await fetch(`${REST_URL}/orders/create_market`, {
+  const orderRes = await fetch(`${REST_URL}/orders/create_market`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(btcOrder.body),
+    body: JSON.stringify(order.body),
   });
-  const d2 = await r2.json();
-  console.log(`BTC long 0.05: ${r2.status}`, d2);
-
-  // 3. Set leverage for ETH to 5x
-  const levETH = signAndPost('update_leverage', { symbol: 'ETH', leverage: 5 });
-  const r3 = await fetch(`${REST_URL}/account/leverage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(levETH.body),
-  });
-  console.log(`ETH leverage 5x: ${r3.status}`);
-
-  // 4. Open ETH short (0.5 ETH)
-  const ethOrder = signAndPost('create_market_order', {
-    symbol: 'ETH',
-    side: 'ask',
-    amount: '0.5',
-    reduce_only: false,
-    slippage_percent: '1.0',
-    client_order_id: crypto.randomUUID(),
-  });
-  const r4 = await fetch(`${REST_URL}/orders/create_market`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(ethOrder.body),
-  });
-  const d4 = await r4.json();
-  console.log(`ETH short 0.5: ${r4.status}`, d4);
-
-  console.log('\nSeed complete. Verify positions at https://test-app.pacifica.fi');
+  console.log('Market order:', orderRes.status, await orderRes.text());
 }
 
-seed().catch(console.error);
+test().catch(console.error);
