@@ -1,0 +1,112 @@
+{
+  "version": "1.1",
+  "hackathon_name": "Pacifica Hackathon 2026",
+  "project_name": "axon",
+  "winning_idea": "AXON — AI Social Trading Terminal with Liquidation Courtroom",
+  "source": "warroom",
+  "status": "complete",
+  "current_phase": "complete",
+  "current_substep": "phase-4-output",
+  "current_session": 3,
+  "next_session_entry": null,
+  "phases_complete": ["phase-0", "phase-0b", "phase-1", "phase-1.5", "phase-2", "phase-2.5", "phase-3", "phase-3.5"],
+  "autonomous_mode": false,
+  "timestamps": {
+    "started": "2026-04-14T00:42:00Z"
+  },
+  "documents": {
+    "prd": "/Users/MAC/hackathon-toolkit/pacifica/axon/PRD.md",
+    "architecture": "/Users/MAC/hackathon-toolkit/pacifica/axon/ARCHITECTURE.md",
+    "architecture_sections_complete": ["system-overview", "component-architecture", "shared-types", "configuration", "design-system", "constants", "signing-service", "pacifica-client", "query-client", "ws-provider", "app-shell", "market-data-hook", "price-grid", "market-selector", "order-management", "position-display", "ai-copilot", "courtroom-engine", "courtroom-ui", "info-api", "main-page", "api-contracts", "integration-map", "testing", "security", "performance", "deployment", "seed-script"],
+    "implementation_plan": "/Users/MAC/hackathon-toolkit/pacifica/axon/PLAN.md",
+    "mini_verdict": null,
+    "deep_research": null
+  },
+  "quality_scores": {
+    "prd": {
+      "component_coverage": "PASS 10/10",
+      "flow_demo_alignment": "PASS 4/4",
+      "api_risk_coverage": "PASS 4/4",
+      "concern_compliance": "PASS 3/3",
+      "implementation_code_check": "PASS 0 blocks",
+      "risk_minimum": "PASS 11 >= 8",
+      "overall": "PASS"
+    },
+    "architecture": {
+      "file_coverage": "PASS 38/38",
+      "verification_tags": "PASS 38/38",
+      "pseudocode_check": "PASS 0",
+      "import_validity": "PASS 0",
+      "component_coverage": "PASS 10/10",
+      "file_path_headers": "PASS 38/38",
+      "overall": "PASS"
+    },
+    "implementation_plan": {
+      "file_creation_coverage": "PASS 38/38",
+      "section_references": "PASS 33/33",
+      "decision_tree_coverage": "PASS 11 >= 7",
+      "phase_gates": "PASS 8/8",
+      "commit_messages": "PASS 29/25",
+      "vague_instructions": "PASS 0",
+      "time_feasibility": "PASS 10h <= 16h",
+      "overall": "PASS"
+    },
+    "cross_doc_audit": {
+      "component_coverage": "PASS 10/10",
+      "api_contract_match": "PASS",
+      "data_structure_match": "PASS",
+      "risk_tag_alignment": "PASS",
+      "file_creation_coverage": "PASS 38/38",
+      "section_reference_validity": "PASS 0 invalid",
+      "decision_tree_coverage": "PASS 11 >= 7",
+      "concern_verification": "PASS 3/3",
+      "timeline_alignment": "PASS 10h <= 16h",
+      "overall": "PASS 9/9"
+    }
+  },
+  "corrections": [],
+  "tech_stack": {
+    "family": "Full-Stack Web",
+    "languages": ["TypeScript"],
+    "frameworks": ["Next.js 15", "shadcn/ui", "TanStack Query"],
+    "deploy_target": "Vercel"
+  },
+  "technical_spike": {
+    "needed": true,
+    "unknowns": [],
+    "verified_patterns": [
+      "GET /api/v1/info returns 200 with 69 market specs",
+      "WebSocket subscribe: {method:subscribe, params:{source:prices}} streams real data every ~3s",
+      "WebSocket ping/pong works: {method:ping} -> {channel:pong}",
+      "Ed25519 signing: solders + base58 works — payload nested under data key, recursive sort, compact JSON",
+      "Elfa AI endpoint exists (401 with invalid key confirms API is live)",
+      "POST /orders/create_market with signed payload for market orders",
+      "WS authenticated actions: {id:uuid, params:{action_name: signed_payload}}"
+    ],
+    "unverified_patterns": [
+      "Orderbook WS subscription format (source: orderbook)",
+      "Account WS channels (account_positions, account_order_updates)",
+      "REST paths for candles, recent-trades, historical-funding",
+      "Elfa AI chat endpoint POST /v2/chat response format"
+    ],
+    "assumed_patterns": [
+      "Next.js ed25519 signing via tweetnacl (Python solders verified, TS equivalent needed)",
+      "Pacifica REST account endpoints (positions, trade-history) — not in SDK examples"
+    ]
+  },
+  "scope_mode": "emergency",
+  "priorities": {
+    "P0_critical": [
+      "design-forge: Frontend polish is TOP priority — terminal aesthetic, animations, courtroom drama must match the depth of the backend integration. Deep integration means nothing if the UI doesn't sell it.",
+      "Courtroom UI choreography: 7-phase animation sequence (typewriter, staggered bars, spring verdict, shimmer trust) must feel cinematic — this is the innovation differentiator",
+      "Trading terminal feel: Price grid flash animations, pro-desk 3-column layout, dark terminal theme"
+    ],
+    "P1_high": [
+      "Deep integration proof: ed25519 signing, real WS streams, real Elfa data, real Groq analysis — all must be live, not mocked",
+      "Demo flow: 8 scenes in 4-5 min must showcase both integration depth AND visual polish"
+    ]
+  },
+  "context_percentage": 50,
+  "session": 3,
+  "errors": []
+}
