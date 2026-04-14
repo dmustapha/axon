@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Groq from 'groq-sdk';
+import Anthropic from '@anthropic-ai/sdk';
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const ELFA_BASE = 'https://api.elfa.ai';
 const ELFA_KEY = process.env.ELFA_API_KEY || '';
 
@@ -56,18 +56,16 @@ Current market context: ${JSON.stringify(marketContext || {})}
 Trending tokens: ${JSON.stringify(trending || {})}
 ${mentions ? `Social mentions for ${symbol}: ${JSON.stringify(mentions)}` : ''}`;
 
-    const completion = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+    const response = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 500,
+      system: systemPrompt,
       messages: [
-        { role: 'system', content: systemPrompt },
         { role: 'user', content: message },
       ],
-      temperature: 0.7,
-      max_tokens: 500,
-      response_format: { type: 'json_object' },
     });
 
-    const rawContent = completion.choices[0]?.message?.content || '{}';
+    const rawContent = response.content[0].type === 'text' ? response.content[0].text : '{}';
     let parsed: { content?: string; tradeSuggestion?: unknown };
     try {
       parsed = JSON.parse(rawContent);

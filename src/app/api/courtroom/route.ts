@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Groq from 'groq-sdk';
+import Anthropic from '@anthropic-ai/sdk';
 import type { EvidenceBundle, CourtroomResult } from '@/types';
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const ELFA_BASE = 'https://api.elfa.ai';
 const ELFA_KEY = process.env.ELFA_API_KEY || '';
 
@@ -78,19 +78,17 @@ export async function POST(req: NextRequest) {
       },
     };
 
-    // Call Groq AI Judge
-    const completion = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+    // Call Claude AI Judge
+    const response = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 300,
+      system: JUDGE_SYSTEM_PROMPT,
       messages: [
-        { role: 'system', content: JUDGE_SYSTEM_PROMPT },
         { role: 'user', content: JSON.stringify(evidence) },
       ],
-      temperature: 0.7,
-      max_tokens: 300,
-      response_format: { type: 'json_object' },
     });
 
-    const raw = completion.choices[0]?.message?.content || '{}';
+    const raw = response.content[0].type === 'text' ? response.content[0].text : '{}';
     let result: CourtroomResult;
     try {
       const parsed = JSON.parse(raw);

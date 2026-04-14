@@ -39,6 +39,7 @@ export function signRequest(
   payload: Record<string, unknown>,
 ): {
   account: string;
+  agent_wallet: string;
   signature: string;
   timestamp: number;
   expiry_window: number;
@@ -54,7 +55,11 @@ export function signRequest(
       : nacl.sign.keyPair.fromSeed(keyBytes).secretKey;
 
   const publicKey = nacl.sign.keyPair.fromSecretKey(secretKey).publicKey;
-  const account = bs58.encode(publicKey);
+  const agentWallet = bs58.encode(publicKey);
+
+  // Main wallet account (agent signs on behalf of this account)
+  const mainAccount = process.env.PACIFICA_PUBLIC_KEY;
+  if (!mainAccount) throw new Error('PACIFICA_PUBLIC_KEY not set');
 
   const timestamp = Date.now();
   const expiry_window = 5000;
@@ -67,7 +72,8 @@ export function signRequest(
   const sig = nacl.sign.detached(messageBytes, secretKey);
 
   return {
-    account,
+    account: mainAccount,
+    agent_wallet: agentWallet,
     signature: bs58.encode(sig),
     timestamp,
     expiry_window,

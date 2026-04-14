@@ -1,8 +1,21 @@
 import nacl from 'tweetnacl';
 import bs58 from 'bs58';
+import { readFileSync } from 'fs';
+
+// Load .env.local manually
+const envContent = readFileSync('.env.local', 'utf-8');
+for (const line of envContent.split('\n')) {
+  const trimmed = line.trim();
+  if (!trimmed || trimmed.startsWith('#')) continue;
+  const eqIdx = trimmed.indexOf('=');
+  if (eqIdx > 0) {
+    process.env[trimmed.slice(0, eqIdx)] = trimmed.slice(eqIdx + 1);
+  }
+}
 
 const REST_URL = process.env.NEXT_PUBLIC_PACIFICA_REST_URL || 'https://test-api.pacifica.fi/api/v1';
 const PRIVATE_KEY = process.env.PACIFICA_PRIVATE_KEY!;
+const MAIN_ACCOUNT = process.env.PACIFICA_PUBLIC_KEY!;
 
 function sortJsonKeys(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(sortJsonKeys);
@@ -19,8 +32,7 @@ function sortJsonKeys(value: unknown): unknown {
 function signAndPost(type: string, payload: Record<string, unknown>) {
   const keyBytes = bs58.decode(PRIVATE_KEY);
   const secretKey = keyBytes.length === 64 ? keyBytes : nacl.sign.keyPair.fromSeed(keyBytes).secretKey;
-  const publicKey = nacl.sign.keyPair.fromSecretKey(secretKey).publicKey;
-  const account = bs58.encode(publicKey);
+  const agentPubkey = bs58.encode(nacl.sign.keyPair.fromSecretKey(secretKey).publicKey);
 
   const timestamp = Date.now();
   const header = { type, timestamp, expiry_window: 5000 };
@@ -29,8 +41,14 @@ function signAndPost(type: string, payload: Record<string, unknown>) {
   const sig = nacl.sign.detached(new TextEncoder().encode(message), secretKey);
 
   return {
-    body: { account, signature: bs58.encode(sig), timestamp, expiry_window: 5000, ...payload },
-    account,
+    body: {
+      account: MAIN_ACCOUNT,
+      agent_wallet: agentPubkey,
+      signature: bs58.encode(sig),
+      timestamp,
+      expiry_window: 5000,
+      ...payload,
+    },
   };
 }
 
