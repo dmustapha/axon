@@ -1,12 +1,14 @@
 {
-  "name": "axon-temp",
+  "name": "axon",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "seed": "npx tsx scripts/seed-demo.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.99.0",
