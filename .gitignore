@@ -36,6 +36,18 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local
+.claude/
+*.log
+.debug-state.json
+.verify-state.json
+.wire-state.json
+.deploy-state.json
+.conductor-state.json
+debug-results/
+screenshots/
+test-results/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

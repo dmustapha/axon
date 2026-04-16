@@ -10,7 +10,7 @@ export function usePositions() {
     queryKey: queryKeys.positions.list,
     queryFn: async (): Promise<Position[]> => {
       const res = await fetch('/api/positions');
-      if (!res.ok) return [];
+      if (!res.ok) throw new Error(`Failed to fetch positions (${res.status})`);
       const data = await res.json();
       return (data.positions || data || []) as Position[];
     },

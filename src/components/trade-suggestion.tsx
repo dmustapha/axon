@@ -17,7 +17,7 @@ export function TradeSuggestionCard({ suggestion, onExecute }: TradeSuggestionCa
         padding: 12,
         borderRadius: 8,
         background: isLong ? 'var(--ax-green-dim)' : 'var(--ax-red-dim)',
-        border: `1px solid ${isLong ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`,
+        border: `1px solid ${isLong ? 'hsla(145,65%,48%,0.2)' : 'hsla(355,70%,55%,0.2)'}`,
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -59,7 +59,7 @@ export function TradeSuggestionCard({ suggestion, onExecute }: TradeSuggestionCa
           color: '#fff',
         }}
       >
-        Execute Trade
+        Apply to Order
       </button>
     </div>
   );

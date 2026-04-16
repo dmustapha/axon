@@ -2,45 +2,54 @@
 
 /* ═══════════════════════════════════════
    AXON — Trading Terminal Design System
-   Emerald data + Gold judicial + Red/Green trading
+   Warm Amber + Gold Judicial + Green/Red Trading
+   Depth-first: multi-layer shadows, glow, shimmer
    ═══════════════════════════════════════ */
 
 :root {
   --font-display: 'Georgia', serif;
-  --font-body: system-ui, -apple-system, sans-serif;
+  --font-body: var(--font-inter), system-ui, -apple-system, sans-serif;
   --font-data: 'Menlo', 'Monaco', 'Courier New', monospace;
 
-  /* Core surfaces */
-  --ax-bg: #06060b;
-  --ax-bg-elev: #0b0b12;
-  --ax-panel: #111119;
-  --ax-surface: #16161f;
-  --ax-surface-hover: #1c1c28;
-  --ax-border: #232335;
-  --ax-border-bright: #2f2f48;
+  /* Elevation surfaces — warm dark */
+  --ax-bg: hsl(25, 18%, 4%);
+  --ax-bg-elev: hsl(25, 12%, 6%);
+  --ax-panel: hsl(25, 10%, 7%);
+  --ax-surface: hsl(25, 8%, 10%);
+  --ax-surface-hover: hsl(25, 8%, 13%);
+  --ax-border: hsla(25, 8%, 18%, 0.6);
+  --ax-border-bright: hsla(25, 8%, 24%, 0.7);
+
+  /* Accent — warm amber */
+  --ax-accent: hsl(35, 90%, 55%);
+  --ax-accent-dim: hsla(35, 90%, 55%, 0.10);
+  --ax-accent-glow: hsla(35, 90%, 55%, 0.06);
 
   /* Trading colors */
-  --ax-green: #10b981;
-  --ax-green-bright: #34d399;
-  --ax-green-dim: rgba(16, 185, 129, 0.12);
-  --ax-red: #ef4444;
-  --ax-red-bright: #f87171;
-  --ax-red-dim: rgba(239, 68, 68, 0.12);
+  --ax-green: hsl(145, 65%, 48%);
+  --ax-green-bright: hsl(145, 65%, 55%);
+  --ax-green-dim: hsla(145, 65%, 48%, 0.10);
+  --ax-red: hsl(355, 70%, 55%);
+  --ax-red-bright: hsl(355, 70%, 62%);
+  --ax-red-dim: hsla(355, 70%, 55%, 0.10);
 
   /* Courtroom gold */
-  --ax-gold: #fbbf24;
-  --ax-gold-dim: rgba(201, 149, 58, 0.12);
-  --ax-gold-glow: rgba(201, 149, 58, 0.25);
+  --ax-gold: hsl(42, 85%, 58%);
+  --ax-gold-dim: hsla(42, 85%, 58%, 0.10);
+  --ax-gold-glow: hsla(42, 85%, 58%, 0.25);
 
-  /* Blue accent */
-  --ax-blue: #3b82f6;
-  --ax-blue-dim: rgba(59, 130, 246, 0.12);
+  /* Blue accent (copilot) */
+  --ax-blue: hsl(210, 65%, 55%);
+  --ax-blue-dim: hsla(210, 65%, 55%, 0.10);
 
-  /* Text */
-  --ax-text: #eaeaf2;
-  --ax-text-sec: #a0a0b8;
-  --ax-text-muted: #6b6b80;
+  /* Text — warm tones */
+  --ax-text: hsl(30, 12%, 90%);
+  --ax-text-sec: hsl(25, 6%, 62%);
+  --ax-text-muted: hsl(25, 4%, 42%);
 
+  /* Depth tokens */
+  --ax-shadow-ambient: hsla(25, 20%, 2%, 0.6);
+  --ax-shadow-deep: hsla(25, 20%, 1%, 0.8);
   --ax-radius: 10px;
 }
 
@@ -51,38 +60,225 @@ body {
   background: var(--ax-bg);
   color: var(--ax-text);
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* — Noise texture overlay for premium tactile feel — */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.022;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 128px 128px;
+}
+
+/* — Ambient background glow orbs — */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 10%, hsla(35, 90%, 55%, 0.04) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 50% at 80% 80%, hsla(42, 85%, 58%, 0.03) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 30% at 50% 100%, hsla(25, 18%, 4%, 0.8) 0%, transparent 50%);
 }
 
 /* — Font utilities — */
 .ax-serif { font-family: var(--font-display); }
-.ax-mono { font-family: var(--font-data); }
+.ax-mono { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
 
 /* — Focus — */
 *:focus-visible {
-  outline: 2px solid var(--ax-blue);
+  outline: 2px solid var(--ax-accent);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
-/* ===== PANEL CARD ===== */
-.ax-panel {
+/* ===== CARD WITH DEPTH — multi-layer shadow + iridescent edge ===== */
+.ax-card {
   background: var(--ax-panel);
   border: 1px solid var(--ax-border);
   border-radius: var(--ax-radius);
+  position: relative;
   overflow: hidden;
+  box-shadow:
+    0 0 0 1px hsla(35, 90%, 55%, 0.04),
+    0 2px 8px var(--ax-shadow-ambient),
+    0 8px 24px var(--ax-shadow-deep),
+    0 0 60px hsla(35, 90%, 55%, 0.02);
+}
+
+/* Iridescent top edge — amber shimmer */
+.ax-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    hsla(35, 90%, 55%, 0.15) 15%,
+    hsla(42, 85%, 58%, 0.25) 40%,
+    hsla(35, 90%, 55%, 0.15) 60%,
+    hsla(42, 85%, 58%, 0.20) 80%,
+    transparent 100%);
+}
+
+/* ===== PANEL (lighter depth) ===== */
+.ax-panel-card {
+  background: var(--ax-panel);
+  border: 1px solid var(--ax-border);
+  border-radius: var(--ax-radius);
+  box-shadow:
+    0 1px 4px var(--ax-shadow-ambient),
+    0 4px 16px var(--ax-shadow-deep);
+  overflow: hidden;
+}
+
+/* ===== INNER SURFACE CARD ===== */
+.ax-surface-card {
+  background: var(--ax-surface);
+  border: 1px solid var(--ax-border);
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: inset 0 1px 2px hsla(25, 20%, 2%, 0.4);
+}
+
+/* ===== INPUT STYLING ===== */
+.ax-input {
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: hsla(25, 10%, 6%, 0.8);
+  border: 1px solid var(--ax-border);
+  color: var(--ax-text);
+  font-size: 13px;
+  font-family: var(--font-body);
+  outline: none;
+  box-shadow: inset 0 1px 3px hsla(25, 20%, 2%, 0.5);
+  transition: border-color 200ms, box-shadow 200ms;
+}
+.ax-input:focus {
+  border-color: hsla(35, 90%, 55%, 0.4);
+  box-shadow:
+    inset 0 1px 3px hsla(25, 20%, 2%, 0.5),
+    0 0 0 2px hsla(35, 90%, 55%, 0.08),
+    0 0 12px hsla(35, 90%, 55%, 0.06);
+}
+.ax-input::placeholder { color: var(--ax-text-muted); }
+.ax-input:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ===== BUTTON BASE ===== */
+.ax-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body);
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: opacity 150ms, transform 80ms, box-shadow 200ms;
+}
+.ax-btn:active { transform: scale(0.97); }
+
+/* ===== GLOW BUTTONS — trading actions ===== */
+.ax-btn-long {
+  background: var(--ax-green);
+  color: #fff;
+  box-shadow: 0 2px 8px hsla(145, 65%, 48%, 0.25), 0 0 20px hsla(145, 65%, 48%, 0.1);
+}
+.ax-btn-long:hover {
+  box-shadow: 0 4px 16px hsla(145, 65%, 48%, 0.35), 0 0 30px hsla(145, 65%, 48%, 0.15);
+}
+.ax-btn-short {
+  background: var(--ax-red);
+  color: #fff;
+  box-shadow: 0 2px 8px hsla(355, 70%, 55%, 0.25), 0 0 20px hsla(355, 70%, 55%, 0.1);
+}
+.ax-btn-short:hover {
+  box-shadow: 0 4px 16px hsla(355, 70%, 55%, 0.35), 0 0 30px hsla(355, 70%, 55%, 0.15);
+}
+
+/* ===== TOGGLE GROUP ===== */
+.ax-toggle-group {
+  display: flex;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--ax-border);
+  background: hsla(25, 10%, 6%, 0.6);
+}
+.ax-toggle-group button {
+  flex: 1;
+  padding: 7px 0;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  color: var(--ax-text-muted);
+  background: transparent;
+  transition: color 150ms, background-color 150ms;
+}
+.ax-toggle-group button.active {
+  background: hsla(35, 90%, 55%, 0.08);
+  color: var(--ax-accent);
+  font-weight: 600;
+}
+
+/* ===== LABEL ===== */
+.ax-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ax-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+
+/* ===== GLOW TEXT — for prices, PnL, key numbers ===== */
+.ax-glow-green {
+  color: var(--ax-green-bright);
+  text-shadow: 0 0 12px hsla(145, 65%, 48%, 0.4);
+}
+.ax-glow-red {
+  color: var(--ax-red-bright);
+  text-shadow: 0 0 12px hsla(355, 70%, 55%, 0.4);
+}
+.ax-glow-gold {
+  color: var(--ax-gold);
+  text-shadow: 0 0 12px hsla(42, 85%, 58%, 0.4);
+}
+.ax-glow-accent {
+  color: var(--ax-accent);
+  text-shadow: 0 0 12px hsla(35, 90%, 55%, 0.3);
+}
+.ax-glow-blue {
+  color: var(--ax-blue);
+  text-shadow: 0 0 12px hsla(210, 65%, 55%, 0.4);
 }
 
 /* ===== PRICE FLASH ===== */
 @keyframes ax-flash-green {
-  0% { background: rgba(16, 185, 129, 0.25); }
-  100% { background: transparent; }
+  0% { background: hsla(145, 65%, 48%, 0.2); box-shadow: inset 0 0 20px hsla(145, 65%, 48%, 0.1); }
+  100% { background: transparent; box-shadow: none; }
 }
 @keyframes ax-flash-red {
-  0% { background: rgba(239, 68, 68, 0.25); }
-  100% { background: transparent; }
+  0% { background: hsla(355, 70%, 55%, 0.2); box-shadow: inset 0 0 20px hsla(355, 70%, 55%, 0.1); }
+  100% { background: transparent; box-shadow: none; }
 }
 .ax-flash-up { animation: ax-flash-green 0.6s ease-out; }
 .ax-flash-down { animation: ax-flash-red 0.6s ease-out; }
@@ -90,14 +286,14 @@ body {
 /* ===== JUDGE GLOW + PULSE ===== */
 .ax-judge-glow {
   box-shadow:
-    0 0 40px rgba(201, 149, 58, 0.12),
-    0 0 80px rgba(201, 149, 58, 0.05),
-    inset 0 1px 0 rgba(201, 149, 58, 0.08);
+    0 0 40px hsla(42, 85%, 58%, 0.12),
+    0 0 80px hsla(42, 85%, 58%, 0.05),
+    inset 0 1px 0 hsla(42, 85%, 58%, 0.08);
 }
 
 @keyframes ax-judge-pulse {
-  0%, 100% { box-shadow: 0 0 40px rgba(201, 149, 58, 0.12), 0 0 80px rgba(201, 149, 58, 0.05); }
-  50% { box-shadow: 0 0 50px rgba(201, 149, 58, 0.18), 0 0 100px rgba(201, 149, 58, 0.08); }
+  0%, 100% { box-shadow: 0 0 40px hsla(42, 85%, 58%, 0.12), 0 0 80px hsla(42, 85%, 58%, 0.05); }
+  50% { box-shadow: 0 0 50px hsla(42, 85%, 58%, 0.18), 0 0 100px hsla(42, 85%, 58%, 0.08); }
 }
 .ax-judge-pulse { animation: ax-judge-pulse 4s ease-in-out infinite; }
 
@@ -125,8 +321,9 @@ body {
   background: var(--ax-panel);
   border: 1px solid var(--ax-border);
   border-left: 3px solid var(--ax-gold);
-  border-radius: 0 6px 6px 0;
+  border-radius: 0 8px 8px 0;
   padding: 16px;
+  box-shadow: inset 3px 0 12px hsla(42, 85%, 58%, 0.05);
 }
 
 .ax-judge-text {
@@ -148,10 +345,10 @@ body {
   display: inline-block;
 }
 
-/* ===== STATUS DOT ===== */
+/* ===== STATUS DOT — breathing glow ===== */
 @keyframes ax-dot-pulse {
-  0%, 100% { opacity: 0.4; box-shadow: 0 0 0 0 transparent; }
-  50% { opacity: 1; box-shadow: 0 0 12px 4px rgba(16, 185, 129, 0.25); }
+  0%, 100% { opacity: 0.5; box-shadow: 0 0 0 0 transparent; }
+  50% { opacity: 1; box-shadow: 0 0 8px 3px hsla(145, 65%, 48%, 0.3); }
 }
 .ax-dot-pulse {
   width: 8px;
@@ -160,10 +357,83 @@ body {
   animation: ax-dot-pulse 2s ease-in-out infinite;
 }
 
+/* ===== HEADER ===== */
+.ax-header {
+  backdrop-filter: blur(12px) saturate(1.2);
+  background: hsla(25, 12%, 6%, 0.85);
+  border-bottom: 1px solid var(--ax-border);
+  box-shadow: 0 1px 12px var(--ax-shadow-ambient);
+}
+
 /* ===== SCROLLBAR ===== */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--ax-bg-elev); }
-::-webkit-scrollbar-thumb { background: var(--ax-border); border-radius: 3px; }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsla(25, 8%, 24%, 0.5); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: hsla(25, 8%, 30%, 0.6); }
+
+/* ===== TABLE ROW HOVER — with glow ===== */
+.ax-row-hover { transition: background-color 150ms, box-shadow 150ms; }
+.ax-row-hover:hover {
+  background: hsla(35, 90%, 55%, 0.04);
+  box-shadow: inset 2px 0 0 var(--ax-accent);
+}
+
+/* ===== SELECTED ROW ===== */
+.ax-row-selected {
+  background: hsla(35, 90%, 55%, 0.06);
+  box-shadow: inset 2px 0 0 var(--ax-accent);
+}
+
+/* ===== SECTION HEADER GLOW ===== */
+.ax-section-header {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--ax-border);
+  background: linear-gradient(180deg, hsla(25, 10%, 8%, 0.8) 0%, transparent 100%);
+}
+
+/* ===== BADGE ===== */
+.ax-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.ax-badge-green {
+  background: var(--ax-green-dim);
+  color: var(--ax-green-bright);
+  box-shadow: 0 0 8px hsla(145, 65%, 48%, 0.15);
+}
+.ax-badge-red {
+  background: var(--ax-red-dim);
+  color: var(--ax-red-bright);
+  box-shadow: 0 0 8px hsla(355, 70%, 55%, 0.15);
+}
+.ax-badge-gold {
+  background: var(--ax-gold-dim);
+  color: var(--ax-gold);
+  box-shadow: 0 0 8px hsla(42, 85%, 58%, 0.15);
+}
+
+/* ===== ANALYZE BUTTON ===== */
+.ax-btn-analyze {
+  background: var(--ax-gold-dim);
+  transition: background-color 150ms, box-shadow 150ms;
+}
+.ax-btn-analyze:hover {
+  background: hsla(42, 85%, 58%, 0.2);
+  box-shadow: 0 0 16px hsla(42, 85%, 58%, 0.25);
+}
+
+/* ===== HOVER LIFT ===== */
+.ax-hover-lift {
+  transition: box-shadow 0.3s ease;
+}
+.ax-hover-lift:hover {
+  box-shadow: 0 4px 20px hsla(0, 0%, 0%, 0.35);
+}
 
 /* ===== REDUCED MOTION ===== */
 @media (prefers-reduced-motion: reduce) {
@@ -173,4 +443,107 @@ body {
   .ax-trust-shimmer { animation: none; }
   .ax-typewriter-cursor { animation: none; opacity: 1; }
   .ax-dot-pulse { animation: none; opacity: 1; }
+  .ax-hover-lift:hover { transform: none; }
+  .ax-skeleton { animation: none !important; }
+  body::after { display: none; }
+}
+
+/* Responsive breakpoints */
+@media (max-width: 1200px) {
+  .ax-trade-grid {
+    grid-template-columns: 200px 1fr 320px !important;
+    grid-template-rows: 1fr auto !important;
+  }
+  /* Move orderbook+positions below chart, spanning col 2 */
+  .ax-trade-grid > :nth-child(3) {
+    grid-column: 2;
+    grid-row: 2;
+    max-height: 220px;
+    flex-direction: row !important;
+  }
+  .ax-trade-grid > :nth-child(3) > * { flex: 1; min-height: 0; }
+}
+@media (max-width: 900px) {
+  .ax-trade-grid {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto !important;
+  }
+  .ax-trade-grid > * { min-height: 300px; }
+  .ax-header { flex-wrap: wrap; height: auto !important; padding: 8px 12px !important; gap: 8px; }
+}
+
+/* Responsive stat grid */
+.ax-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+@media (max-width: 900px) {
+  .ax-stat-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Responsive breakout grid */
+.ax-breakout-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 900px) {
+  .ax-breakout-grid { grid-template-columns: 1fr; }
+}
+
+/* Loading skeleton */
+.ax-skeleton {
+  background: linear-gradient(90deg, var(--ax-surface) 25%, var(--ax-border) 50%, var(--ax-surface) 75%);
+  background-size: 200% 100%;
+  animation: ax-shimmer 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+/* ═══ Solana Wallet Adapter Overrides ═══ */
+/* Wallet adapter styles load after globals — use @layer to control order */
+.wallet-adapter-modal-wrapper {
+  background: var(--ax-bg) !important;
+  border: 1px solid var(--ax-border) !important;
+  border-radius: 12px !important;
+  font-family: inherit !important;
+}
+.wallet-adapter-modal-title {
+  color: var(--ax-text) !important;
+  font-family: inherit !important;
+}
+.wallet-adapter-modal-list li {
+  background: var(--ax-surface) !important;
+  border: 1px solid var(--ax-border) !important;
+  border-radius: 8px !important;
+  margin-bottom: 4px !important;
+}
+.wallet-adapter-modal-list li:hover {
+  background: var(--ax-surface-hover) !important;
+}
+.wallet-adapter-modal-list .wallet-adapter-button {
+  color: var(--ax-text) !important;
+  font-family: inherit !important;
+}
+.wallet-adapter-modal-button-close {
+  background: var(--ax-surface) !important;
+  color: var(--ax-text-muted) !important;
+}
+.wallet-adapter-modal-overlay {
+  background: rgba(0, 0, 0, 0.7) !important;
+}
+.wallet-adapter-dropdown {
+  font-family: inherit !important;
+}
+.wallet-adapter-dropdown-list {
+  background: var(--ax-surface) !important;
+  border: 1px solid var(--ax-border) !important;
+  border-radius: 8px !important;
+}
+.wallet-adapter-dropdown-list-item {
+  color: var(--ax-text) !important;
+  font-family: inherit !important;
+}
+.wallet-adapter-dropdown-list-item:hover {
+  background: var(--ax-surface-hover) !important;
 }

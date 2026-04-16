@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { checkOrigin } from '@/lib/origin-check';
+import { parseJsonPermissive } from '@/lib/parse-json';
+import { ELFA_BASE, elfaHeaders } from '@/lib/elfa';
 import type { EvidenceBundle, CourtroomResult } from '@/types';
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-const ELFA_BASE = 'https://api.elfa.ai';
-const ELFA_KEY = process.env.ELFA_API_KEY || '';
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 15_000 });
 
 async function fetchSentiment(symbol: string) {
   try {
     const res = await fetch(`${ELFA_BASE}/v2/data/top-mentions?ticker=${symbol}&limit=10`, {
-      headers: { 'x-elfa-api-key': ELFA_KEY },
+      headers: elfaHeaders(),
     });
     if (!res.ok) return { mentions: 0, positive_pct: 50, trending: false };
     const data = await res.json();
@@ -53,8 +54,14 @@ Signals for MARKET-DRIVEN:
 - High social activity explaining the move`;
 
 export async function POST(req: NextRequest) {
+  if (!checkOrigin(req)) {
+    return NextResponse.json({ error_code: -1, message: 'Forbidden' }, { status: 403 });
+  }
   try {
-    const { position, priceData } = await req.json();
+    const { position, priceData, conversationContext } = await req.json();
+    if (!position?.symbol) {
+      return NextResponse.json({ error_code: -1, message: 'Invalid position data' }, { status: 400 });
+    }
     const symbol = position.symbol;
 
     // Gather sentiment evidence
@@ -81,38 +88,29 @@ export async function POST(req: NextRequest) {
     // Call Claude AI Judge
     const response = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 300,
+      max_tokens: 800,
       system: JUDGE_SYSTEM_PROMPT,
       messages: [
-        { role: 'user', content: JSON.stringify(evidence) },
+        { role: 'user', content: JSON.stringify(evidence) + (conversationContext ? `\n\n<copilot_context>${String(conversationContext).slice(0, 2000)}</copilot_context>` : '') },
       ],
     });
 
-    const raw = response.content[0].type === 'text' ? response.content[0].text : '{}';
-    let result: CourtroomResult;
-    try {
-      const parsed = JSON.parse(raw);
-      result = {
-        verdict: parsed.verdict === 'manipulation_suspected' ? 'manipulation_suspected' : 'market_driven',
-        narration: parsed.narration || 'The court has reviewed the evidence but could not reach a conclusion.',
-        trustScore: Math.max(0, Math.min(800, parsed.trust_score || 400)),
-        confidenceScores: parsed.confidence || { price_action: 0.5, sentiment: 0.5, position_context: 0.5 },
-        recommendation: parsed.recommendation || 'Monitor position closely.',
-      };
-    } catch {
-      result = {
-        verdict: 'market_driven',
-        narration: 'The court has reviewed the available evidence. Market conditions appear within normal parameters.',
-        trustScore: 400,
-        confidenceScores: { price_action: 0.5, sentiment: 0.5, position_context: 0.5 },
-        recommendation: 'Continue monitoring position.',
-      };
-    }
+    const raw = response.content?.[0]?.type === 'text' ? response.content[0].text : '{}';
+    const defaultVerdict = { verdict: 'market_driven', narration: 'The court has reviewed the available evidence. Market conditions appear within normal parameters.', trust_score: 400, confidence: { price_action: 0.5, sentiment: 0.5, position_context: 0.5 }, recommendation: 'Continue monitoring position.' };
+    const parsed = parseJsonPermissive<Record<string, unknown>>(raw, defaultVerdict);
+    const result: CourtroomResult = {
+      verdict: parsed.verdict === 'manipulation_suspected' ? 'manipulation_suspected' : 'market_driven',
+      narration: (parsed.narration as string) || 'The court has reviewed the evidence but could not reach a conclusion.',
+      trustScore: Math.max(0, Math.min(800, (parsed.trust_score as number) || 400)),
+      confidenceScores: (parsed.confidence as CourtroomResult['confidenceScores']) || { price_action: 0.5, sentiment: 0.5, position_context: 0.5 },
+      recommendation: (parsed.recommendation as string) || 'Monitor position closely.',
+    };
 
     return NextResponse.json({ evidence, result });
   } catch (e) {
+    console.error('[courtroom]', e);
     return NextResponse.json(
-      { error: (e as Error).message },
+      { error_code: -1, message: 'Courtroom analysis temporarily unavailable.' },
       { status: 500 },
     );
   }

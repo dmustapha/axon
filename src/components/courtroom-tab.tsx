@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { useCourtroom } from '@/hooks/use-courtroom';
 import { usePositions } from '@/hooks/use-positions';
 import { JudgePanel } from './judge-panel';
@@ -10,24 +11,31 @@ import type { Position } from '@/types';
 
 interface CourtroomTabProps {
   externalPosition?: Position | null;
+  copilotContext?: string;
 }
 
-export function CourtroomTab({ externalPosition }: CourtroomTabProps) {
+export function CourtroomTab({ externalPosition, copilotContext }: CourtroomTabProps) {
   const { state, analyzeLiquidation, reset } = useCourtroom();
   const { data: positions } = usePositions();
 
   // Find positions near liquidation (< 15% margin)
   const atRiskPositions = (positions || []).filter((p) => p.margin_ratio < 15);
 
+  const autoStartedRef = useRef<string | null>(null);
+
   function handleAnalyze(position: Position) {
     reset();
-    analyzeLiquidation(position);
+    analyzeLiquidation(position, copilotContext);
   }
 
-  // Auto-start if external position passed
-  if (externalPosition && state.phase === 'idle') {
-    handleAnalyze(externalPosition);
-  }
+  // Auto-start if external position passed (useEffect prevents render-time side effects)
+  useEffect(() => {
+    if (externalPosition && state.phase === 'idle' && autoStartedRef.current !== `${externalPosition.symbol}-${externalPosition.side}`) {
+      autoStartedRef.current = `${externalPosition.symbol}-${externalPosition.side}`;
+      reset();
+      analyzeLiquidation(externalPosition, copilotContext);
+    }
+  }, [externalPosition, state.phase, reset, analyzeLiquidation, copilotContext]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 12, height: '100%', overflowY: 'auto' }}>
@@ -43,6 +51,7 @@ export function CourtroomTab({ externalPosition }: CourtroomTabProps) {
                 <button
                   key={`${p.symbol}-${i}`}
                   onClick={() => handleAnalyze(p)}
+                  className="ax-row-hover"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -55,6 +64,7 @@ export function CourtroomTab({ externalPosition }: CourtroomTabProps) {
                     cursor: 'pointer',
                     fontFamily: 'inherit',
                     fontSize: 13,
+                    boxShadow: 'inset 0 1px 2px hsla(25, 20%, 2%, 0.4)',
                   }}
                 >
                   <span>
@@ -71,8 +81,9 @@ export function CourtroomTab({ externalPosition }: CourtroomTabProps) {
             </div>
           ) : (
             <div style={{ padding: 20, textAlign: 'center', color: 'var(--ax-text-muted)', fontSize: 13 }}>
-              No positions near liquidation.
-              {(positions || []).length > 0 && ' Select any position from the Positions panel using the Analyze button.'}
+              {(positions || []).length > 0
+                ? 'No positions near liquidation. Select any position from the Positions panel using the Analyze button.'
+                : 'Place a trade first, then analyze your position here for manipulation detection.'}
             </div>
           )}
         </div>

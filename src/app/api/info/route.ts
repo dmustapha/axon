@@ -11,6 +11,7 @@ export async function GET() {
     const data = await res.json();
     return NextResponse.json(data);
   } catch (e) {
-    return NextResponse.json({ markets: [] }, { status: 200 });
+    console.error('[info]', e);
+    return NextResponse.json({ markets: [] }, { status: 502 });
   }
 }

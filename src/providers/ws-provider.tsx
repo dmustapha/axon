@@ -66,7 +66,8 @@ export function WSProvider({ children }: { children: ReactNode }) {
           if (raw.channel === 'pong') return;
           if (typeof raw !== 'object' || raw === null) return;
           const msg: WsMessage = { channel: raw.channel, data: raw.data };
-          for (const fn of listenersRef.current) fn(msg);
+          const snapshot = [...listenersRef.current];
+          for (const fn of snapshot) fn(msg);
         } catch {
           // Ignore non-JSON messages
         }
@@ -77,7 +78,7 @@ export function WSProvider({ children }: { children: ReactNode }) {
         if (!closed) {
           setStatus('disconnected');
           const delay = Math.min(backoffRef.current, WS_MAX_BACKOFF);
-          backoffRef.current = delay * 2;
+          backoffRef.current = Math.min(delay * 2, WS_MAX_BACKOFF);
           setTimeout(connect, delay);
         }
       };

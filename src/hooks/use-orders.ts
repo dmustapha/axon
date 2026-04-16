@@ -28,10 +28,10 @@ export function useOrders() {
       }
 
       const result = data as OrderResponse;
-      toast.success(`Order placed: ${result.order_id}`);
+      toast.success('Order placed successfully');
       return result;
     } catch (e) {
-      toast.error(`Order failed: ${(e as Error).message}`);
+      toast.error('Order failed. Please try again.');
       return null;
     } finally {
       setIsSubmitting(false);
