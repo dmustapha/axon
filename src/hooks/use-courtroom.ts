@@ -1,7 +1,7 @@
 'use client';
 
-import { useReducer, useCallback } from 'react';
-import { useMarketPrices } from '@/hooks/use-market-data';
+import { useReducer, useCallback, useRef } from 'react';
+import { usePrices } from '@/hooks/use-prices';
 import type {
   CourtroomState,
   CourtroomPhase,
@@ -68,30 +68,41 @@ function delay(ms: number): Promise<void> {
 
 export function useCourtroom() {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { prices } = useMarketPrices();
+  const { prices } = usePrices();
+  const pricesRef = useRef(prices);
+  pricesRef.current = prices;
 
   const analyzeLiquidation = useCallback(
-    async (position: Position) => {
+    async (position: Position, conversationContext?: string) => {
       dispatch({ type: 'START_ANALYSIS', position });
 
-      // Phase 1: Filing (2s)
-      await delay(2000);
+      // Phase 1: Filing (1s)
+      await delay(1000);
 
-      // Build price context from live data
-      const live = prices.get(position.symbol);
+      // Build price context from live data (snapshot at call time)
+      const live = pricesRef.current.get(position.symbol);
       const currentMark = live ? parseFloat(live.mark) : parseFloat(position.mark_price);
       const entryPrice = parseFloat(position.entry_price);
       const change24h = live
         ? ((currentMark - parseFloat(live.yesterday_price)) / parseFloat(live.yesterday_price)) * 100
         : 0;
 
+      // Estimate change_1h from funding rate direction + 24h change magnitude
+      const fundingRate = live ? parseFloat(live.funding) : 0;
+      const estimatedChange1h = change24h !== 0
+        ? change24h / 24 * (1 + Math.abs(fundingRate) * 100) // Weight by funding intensity
+        : 0;
+      // Estimate entry age from distance between entry and mark (larger distance = older position)
+      const priceDistance = Math.abs(currentMark - entryPrice) / currentMark;
+      const estimatedAgeHours = Math.max(0.5, Math.min(168, priceDistance * 500)); // 0.5h to 7 days
+
       const priceData = {
-        change_1h: change24h / 24,
+        change_1h: parseFloat(estimatedChange1h.toFixed(3)),
         change_24h: change24h,
         volume_spike: live ? parseFloat(live.volume_24h) > 50_000_000 : false,
         funding: live?.funding || '0',
         open_interest: live?.open_interest || '0',
-        entry_age_hours: 1,
+        entry_age_hours: parseFloat(estimatedAgeHours.toFixed(1)),
       };
 
       // Phase 2: Evidence collection (3s)
@@ -101,34 +112,34 @@ export function useCourtroom() {
         const res = await fetch('/api/courtroom', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ position, priceData }),
+          body: JSON.stringify({ position, priceData, conversationContext }),
         });
         const data = await res.json();
         const { evidence, result } = data as { evidence: EvidenceBundle; result: CourtroomResult };
 
         dispatch({ type: 'SET_EVIDENCE', evidence });
-        await delay(2000);
+        await delay(1000);
 
-        // Phase 3: Analysis (2s)
+        // Phase 3: Analysis (1s)
         dispatch({ type: 'SET_PHASE', phase: 'analysis' });
-        await delay(2000);
+        await delay(1000);
 
-        // Phase 4: Deliberation — narration (2s)
+        // Phase 4: Deliberation — narration (1.5s)
         dispatch({ type: 'SET_NARRATION', narration: result.narration });
-        await delay(3000);
+        await delay(1500);
 
-        // Phase 5: Quality checks (2s)
+        // Phase 5: Quality checks (1s)
         const checks: CheckDetail[] = Object.entries(result.confidenceScores).map(([name, score]) => ({
           name: name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
           passed: score >= 0.5,
           score: Math.round(score * 100),
         }));
         dispatch({ type: 'SET_CHECKS', checks });
-        await delay(2000);
+        await delay(1000);
 
-        // Phase 6: Verdict (2s)
+        // Phase 6: Verdict (1s)
         dispatch({ type: 'SET_VERDICT', result });
-        await delay(2000);
+        await delay(1000);
 
         // Phase 7: Complete
         dispatch({ type: 'COMPLETE' });
@@ -138,7 +149,7 @@ export function useCourtroom() {
         dispatch({ type: 'COMPLETE' });
       }
     },
-    [prices],
+    [],
   );
 
   const reset = useCallback(() => dispatch({ type: 'RESET' }), []);

@@ -58,6 +58,7 @@ export interface OrderRequest {
   reduce_only: boolean;
   slippage_percent?: string;
   leverage?: number;
+  tif?: string;
   client_order_id: string;
 }
 
@@ -186,3 +187,5 @@ export interface WsMessage {
 // ═══════════════════════════════════════
 
 export type RightPanel = 'copilot' | 'courtroom';
+export type ActivePage = 'trade' | 'portfolio' | 'analytics';
+export type ChartTimeframe = '1m' | '5m' | '15m' | '1H' | '4H' | '1D';

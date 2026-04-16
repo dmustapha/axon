@@ -1,7 +1,9 @@
 'use client';
 
 import { useMemo, useRef, useEffect } from 'react';
-import { useMarketPrices, useMarketSpecs } from '@/hooks/use-market-data';
+import { usePrices } from '@/hooks/use-prices';
+import { useMarketSpecs } from '@/hooks/use-market-data';
+import { formatPrice, formatVolume } from '@/lib/format';
 import type { MarketCategory, MarketPrice } from '@/types';
 import { getCategory } from '@/lib/constants';
 
@@ -15,27 +17,15 @@ interface PriceGridProps {
 function pctChange(mark: string, yesterday: string): number {
   const m = parseFloat(mark);
   const y = parseFloat(yesterday);
-  if (!y) return 0;
-  return ((m - y) / y) * 100;
-}
-
-function formatPrice(val: string): string {
-  const n = parseFloat(val);
-  if (n >= 1000) return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  if (n >= 1) return n.toFixed(4);
-  return n.toPrecision(4);
-}
-
-function formatVolume(val: string): string {
-  const n = parseFloat(val);
-  if (n >= 1e9) return `${(n / 1e9).toFixed(1)}B`;
-  if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
-  if (n >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
-  return n.toFixed(0);
+  if (!y || !m) return 0;
+  const pct = ((m - y) / y) * 100;
+  // Pacifica testnet returns yesterday_price=1 for low-activity markets
+  if (Math.abs(pct) > 100) return 0;
+  return pct;
 }
 
 export function PriceGrid({ category, search, onSelectMarket, selectedMarket }: PriceGridProps) {
-  const { prices, getPriceDirection } = useMarketPrices();
+  const { prices, getPriceDirection } = usePrices();
   const { data: specs } = useMarketSpecs();
   const flashRefs = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const rowRefs = useRef<Map<string, HTMLTableRowElement>>(new Map());
@@ -51,6 +41,14 @@ export function PriceGrid({ category, search, onSelectMarket, selectedMarket }: 
       })
       .sort((a, b) => parseFloat(b.volume_24h) - parseFloat(a.volume_24h));
   }, [prices, category, search]);
+
+  // Cleanup flash timeouts on unmount
+  useEffect(() => {
+    return () => {
+      for (const t of flashRefs.current.values()) clearTimeout(t);
+      flashRefs.current.clear();
+    };
+  }, []);
 
   // Flash animation on price change
   useEffect(() => {
@@ -77,28 +75,38 @@ export function PriceGrid({ category, search, onSelectMarket, selectedMarket }: 
   }, [rows, getPriceDirection]);
 
   if (!rows.length) {
+    if (prices.size === 0) {
+      return (
+        <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {Array.from({ length: 8 }, (_, i) => (
+            <div key={i} className="ax-skeleton" style={{ height: 28, width: '100%' }} />
+          ))}
+        </div>
+      );
+    }
     return (
       <div style={{ padding: 24, textAlign: 'center', color: 'var(--ax-text-muted)' }}>
-        {prices.size === 0 ? 'Connecting to market data...' : 'No markets match your filter.'}
+        No markets match your filter.
       </div>
     );
   }
 
   return (
-    <div style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 120px)' }}>
+    <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr>
-            {['Symbol', 'Price', '24h %', 'Funding', 'Volume', 'OI'].map((h) => (
+            {['Symbol', 'Price', '24h %', 'Funding', 'Vol', 'Open Int.'].map((h) => (
               <th
                 key={h}
                 style={{
                   position: 'sticky',
                   top: 0,
+                  zIndex: 1,
                   background: 'var(--ax-panel)',
                   textAlign: h === 'Symbol' ? 'left' : 'right',
-                  padding: '8px 12px',
-                  fontSize: 11,
+                  padding: '6px 10px',
+                  fontSize: 10,
                   fontWeight: 600,
                   color: 'var(--ax-text-muted)',
                   textTransform: 'uppercase',
@@ -120,40 +128,33 @@ export function PriceGrid({ category, search, onSelectMarket, selectedMarket }: 
                 key={p.symbol}
                 ref={(el) => { if (el) rowRefs.current.set(p.symbol, el); }}
                 onClick={() => onSelectMarket(p.symbol)}
+                className={`ax-row-hover ${isSelected ? 'ax-row-selected' : ''}`}
                 style={{
                   cursor: 'pointer',
-                  background: isSelected ? 'rgba(59, 130, 246, 0.08)' : undefined,
-                  borderBottom: '1px solid rgba(35, 35, 53, 0.4)',
-                }}
-                onMouseEnter={(e) => {
-                  if (!isSelected) e.currentTarget.style.background = 'var(--ax-surface-hover)';
-                }}
-                onMouseLeave={(e) => {
-                  if (!isSelected) e.currentTarget.style.background = '';
+                  borderBottom: '1px solid hsla(25, 6%, 15%, 0.4)',
                 }}
               >
-                <td style={{ padding: '10px 12px', fontWeight: 600, fontSize: 13 }}>{p.symbol}</td>
-                <td className="ax-mono" style={{ padding: '10px 12px', textAlign: 'right', fontSize: 13 }}>
+                <td style={{ padding: '6px 10px', fontWeight: 600, fontSize: 12 }}>{p.symbol}</td>
+                <td className="ax-mono" style={{ padding: '6px 10px', textAlign: 'right', fontSize: 12 }}>
                   {formatPrice(p.mark)}
                 </td>
                 <td
-                  className="ax-mono"
+                  className={`ax-mono ${change >= 0 ? 'ax-glow-green' : 'ax-glow-red'}`}
                   style={{
-                    padding: '10px 12px',
+                    padding: '6px 10px',
                     textAlign: 'right',
-                    fontSize: 13,
-                    color: change >= 0 ? 'var(--ax-green-bright)' : 'var(--ax-red-bright)',
+                    fontSize: 12,
                   }}
                 >
                   {change >= 0 ? '+' : ''}{change.toFixed(2)}%
                 </td>
-                <td className="ax-mono" style={{ padding: '10px 12px', textAlign: 'right', fontSize: 12, color: 'var(--ax-text-sec)' }}>
+                <td className="ax-mono" style={{ padding: '6px 10px', textAlign: 'right', fontSize: 11, color: 'var(--ax-text-sec)' }}>
                   {(parseFloat(p.funding) * 100).toFixed(4)}%
                 </td>
-                <td className="ax-mono" style={{ padding: '10px 12px', textAlign: 'right', fontSize: 12, color: 'var(--ax-text-sec)' }}>
+                <td className="ax-mono" style={{ padding: '6px 10px', textAlign: 'right', fontSize: 11, color: 'var(--ax-text-sec)' }}>
                   ${formatVolume(p.volume_24h)}
                 </td>
-                <td className="ax-mono" style={{ padding: '10px 12px', textAlign: 'right', fontSize: 12, color: 'var(--ax-text-sec)' }}>
+                <td className="ax-mono" style={{ padding: '6px 10px', textAlign: 'right', fontSize: 11, color: 'var(--ax-text-sec)' }}>
                   ${formatVolume(p.open_interest)}
                 </td>
               </tr>

@@ -22,6 +22,20 @@ function sortJsonKeys(value: unknown): unknown {
 }
 
 /**
+ * Derive the Pacifica account address from the private key.
+ */
+export function getAccountAddress(): string {
+  const privateKeyBase58 = process.env.PACIFICA_PRIVATE_KEY;
+  if (!privateKeyBase58) throw new Error('PACIFICA_PRIVATE_KEY not set');
+  const keyBytes = bs58.decode(privateKeyBase58);
+  const secretKey =
+    keyBytes.length === 64
+      ? keyBytes
+      : nacl.sign.keyPair.fromSeed(keyBytes).secretKey;
+  return bs58.encode(nacl.sign.keyPair.fromSecretKey(secretKey).publicKey);
+}
+
+/**
  * Sign a Pacifica API request.
  *
  * Signing flow (matches Python SDK exactly):
@@ -39,7 +53,6 @@ export function signRequest(
   payload: Record<string, unknown>,
 ): {
   account: string;
-  agent_wallet: string;
   signature: string;
   timestamp: number;
   expiry_window: number;
@@ -48,21 +61,17 @@ export function signRequest(
   if (!privateKeyBase58) throw new Error('PACIFICA_PRIVATE_KEY not set');
 
   const keyBytes = bs58.decode(privateKeyBase58);
-  // Handle both 32-byte seed and 64-byte full keypair
   const secretKey =
     keyBytes.length === 64
       ? keyBytes
       : nacl.sign.keyPair.fromSeed(keyBytes).secretKey;
 
+  // Derive public key from private key — this IS the account
   const publicKey = nacl.sign.keyPair.fromSecretKey(secretKey).publicKey;
-  const agentWallet = bs58.encode(publicKey);
-
-  // Main wallet account (agent signs on behalf of this account)
-  const mainAccount = process.env.PACIFICA_PUBLIC_KEY;
-  if (!mainAccount) throw new Error('PACIFICA_PUBLIC_KEY not set');
+  const account = bs58.encode(publicKey);
 
   const timestamp = Date.now();
-  const expiry_window = 5000;
+  const expiry_window = 5_000;
 
   const header = { type, timestamp, expiry_window };
   const data = { ...header, data: payload };
@@ -72,8 +81,7 @@ export function signRequest(
   const sig = nacl.sign.detached(messageBytes, secretKey);
 
   return {
-    account: mainAccount,
-    agent_wallet: agentWallet,
+    account,
     signature: bs58.encode(sig),
     timestamp,
     expiry_window,
