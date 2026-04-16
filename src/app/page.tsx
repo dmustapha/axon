@@ -75,14 +75,8 @@ export default function Home() {
         flexShrink: 0,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <h1 style={{ fontSize: 17, fontWeight: 700, margin: 0, letterSpacing: '-0.01em' }}>
-              <span style={{ color: 'var(--ax-accent)' }}>AX</span>
-              <span style={{ color: 'var(--ax-text)' }}>ON</span>
-            </h1>
-            <span style={{ fontSize: 10, color: 'var(--ax-text-muted)', textTransform: 'uppercase', letterSpacing: '0.15em', marginTop: 1 }}>
-              AI Trading Terminal
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <img src="/axon-logo.png" alt="AXON" style={{ height: 28 }} />
           </div>
           <nav style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             {([
