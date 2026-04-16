@@ -74,7 +74,7 @@ export function CourtroomTab({ externalPosition, copilotContext }: CourtroomTabP
                     </span>
                   </span>
                   <span style={{ color: 'var(--ax-red-bright)', fontWeight: 600 }}>
-                    {p.margin_ratio.toFixed(1)}% margin
+                    {(p.margin_ratio ?? 0).toFixed(1)}% margin
                   </span>
                 </button>
               ))}
@@ -111,7 +111,7 @@ export function CourtroomTab({ externalPosition, copilotContext }: CourtroomTabP
                 {state.position.leverage}x
               </span>
               <span className="ax-mono" style={{ color: 'var(--ax-text-sec)' }}>
-                Margin: {state.position.margin_ratio.toFixed(1)}%
+                Margin: {(state.position.margin_ratio ?? 0).toFixed(1)}%
               </span>
             </div>
           )}

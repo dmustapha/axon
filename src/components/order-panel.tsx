@@ -82,10 +82,14 @@ export function OrderPanel({ selectedMarket, pendingSuggestion, onSuggestionAppl
     e.preventDefault();
     if (!amount || isSubmitting) return;
 
+    // Convert USD amount to base asset amount (Pacifica expects asset units, not USD)
+    const markP = currentPrice ? parseFloat(currentPrice.mark) : 0;
+    const assetAmount = markP > 0 ? (parseFloat(amount) / markP).toFixed(6) : amount;
+
     const result = await placeOrder({
       symbol,
       side,
-      amount,
+      amount: assetAmount,
       order_type: orderType,
       price: orderType !== 'market' ? price : undefined,
       reduce_only: false,
