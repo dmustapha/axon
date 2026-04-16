@@ -46,13 +46,15 @@ export function PositionDisplay({ onAnalyze }: PositionDisplayProps) {
         body: JSON.stringify({
           symbol: p.symbol, side: closeSide, amount: p.size,
           order_type: 'market', reduce_only: true, client_order_id: crypto.randomUUID(),
+          slippage_percent: '1',
         }),
       });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         toast.success(`Closing ${p.symbol} position`);
         queryClient.invalidateQueries({ queryKey: ['positions'] });
       } else {
-        toast.error('Failed to close position');
+        toast.error(`Failed to close position: ${data?.message || 'Unknown error'}`);
       }
     } catch {
       toast.error('Failed to close position');
