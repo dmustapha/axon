@@ -4,6 +4,36 @@ import { PACIFICA_REST_URL } from '@/lib/constants';
 import { checkOrigin } from '@/lib/origin-check';
 import type { OrderRequest } from '@/types';
 
+// Cache market info for lot_size rounding
+let marketInfoCache: Record<string, { lot_size: string }> | null = null;
+let cacheTime = 0;
+const CACHE_TTL = 5 * 60 * 1000;
+
+async function getLotSize(symbol: string): Promise<number> {
+  if (!marketInfoCache || Date.now() - cacheTime > CACHE_TTL) {
+    try {
+      const res = await fetch(`${PACIFICA_REST_URL}/info`, { signal: AbortSignal.timeout(5000) });
+      const json = await res.json();
+      const markets = json.data || json;
+      marketInfoCache = {};
+      for (const m of markets) {
+        marketInfoCache[m.symbol] = { lot_size: m.lot_size };
+      }
+      cacheTime = Date.now();
+    } catch {
+      return 0.00001; // safe default
+    }
+  }
+  const lot = marketInfoCache[symbol]?.lot_size;
+  return lot ? parseFloat(lot) : 0.00001;
+}
+
+function roundToLot(amount: number, lotSize: number): string {
+  const decimals = Math.max(0, -Math.floor(Math.log10(lotSize)));
+  const rounded = Math.floor(amount / lotSize) * lotSize;
+  return rounded.toFixed(decimals);
+}
+
 export async function POST(req: NextRequest) {
   if (!checkOrigin(req)) {
     return NextResponse.json({ error_code: -1, message: 'Forbidden' }, { status: 403 });
@@ -25,6 +55,10 @@ export async function POST(req: NextRequest) {
     if (isNaN(amountNum) || amountNum <= 0) {
       return NextResponse.json({ error_code: -1, message: 'Invalid amount' }, { status: 400 });
     }
+
+    // Round amount to market's lot_size
+    const lotSize = await getLotSize(symbol);
+    const roundedAmount = roundToLot(amountNum, lotSize);
     if ((order_type === 'limit' || order_type === 'stop') && !price) {
       return NextResponse.json({ error_code: -1, message: 'Price required for limit/stop orders' }, { status: 400 });
     }
@@ -63,7 +97,7 @@ export async function POST(req: NextRequest) {
     const payload: Record<string, unknown> = {
       symbol,
       side,
-      amount,
+      amount: roundedAmount,
       reduce_only,
       client_order_id,
     };
