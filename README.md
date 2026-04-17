@@ -22,7 +22,7 @@ AXON connects to Pacifica's REST API (9 endpoints) and WebSocket feed to provide
 
 ## Demo Video
 
-[YouTube link]
+[Watch the demo](https://youtu.be/geiqJbn41P0)
 
 ---
 
