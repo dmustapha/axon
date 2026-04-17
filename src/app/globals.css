@@ -363,6 +363,8 @@ body::before {
   background: hsla(25, 12%, 6%, 0.85);
   border-bottom: 1px solid var(--ax-border);
   box-shadow: 0 1px 12px var(--ax-shadow-ambient);
+  position: relative;
+  z-index: 100;
 }
 
 /* ===== SCROLLBAR ===== */
