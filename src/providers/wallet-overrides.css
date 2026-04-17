@@ -20,3 +20,17 @@
 .wallet-adapter-button.wallet-adapter-button-trigger .wallet-adapter-button-start-icon {
   display: none !important;
 }
+
+/* Ensure wallet dropdown renders above page content */
+.wallet-adapter-dropdown {
+  z-index: 1000 !important;
+}
+.wallet-adapter-dropdown-list {
+  z-index: 1000 !important;
+}
+.wallet-adapter-modal-wrapper {
+  z-index: 1000 !important;
+}
+.wallet-adapter-modal {
+  z-index: 1000 !important;
+}
