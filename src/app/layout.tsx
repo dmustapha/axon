@@ -12,7 +12,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'AXON — AI Trading Terminal for Pacifica',
   description: 'AI-powered perpetuals trading terminal with social intelligence copilot and liquidation courtroom.',
-  other: { 'ory-verify': 'orynth-04e7164c6d5a452dbcdca1c9f8d7ab7e' },
+  other: { 'ory-verify': 'orynth-bc7b0f8223db455e9a8537db2dd91c50' },
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: '48x48' },
